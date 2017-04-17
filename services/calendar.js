@@ -97,7 +97,7 @@ let calendarService = module.exports = {
                         temp  = new Date();
 
                         // returning the month calendar.
-                        resolve(utils.map(month, day => {
+                        resolve(utils.map(month, day => { 
 
                             // saving the time we retrieved the day
                             day.retrieved = temp;

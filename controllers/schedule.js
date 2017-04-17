@@ -9,7 +9,7 @@ router.use(cors());
 router.use(logging);
 
 router.get('/calendar/month', (req, res) => {
-    calendarService.getMonth(datekey)
+    calendarService.getMonth(req.query.datekey)
         .then ((data)     => res.status(status.success.ok).json(data))
         .catch((e, props) => res.error(e, props));
 });
