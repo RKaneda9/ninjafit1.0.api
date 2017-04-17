@@ -37,6 +37,90 @@ let helper = {
         }
 
         return date;
+    },
+
+    toResults: function (days) {
+        return {
+            start: settings.starttimekey,
+            end:   settings.endtimekey,
+            days:  days
+        };
+    },
+
+    getResults: function (start, end) {
+        let temp  = start.clone(),
+            month = [],
+            datekey, dayData, invalid, results;
+
+        do {
+            datekey = temp.toDateKey();
+            dayData = storage[datekey];
+
+            if (helper.isExpired(dayData)) {
+                invalid = true;
+                break;
+            }
+            else { 
+                month.push({
+                    date:  dayData.date,
+                    items: dayData.items
+                });
+            }
+
+            temp.addDays(1);
+
+        } while (temp <= end);
+
+        return invalid ? null : helper.toResults(month);
+    },
+
+    requestMonth: function (month) {
+        return new Promise((resolve, reject) => {
+
+            let url     = helper.getUrl(month);
+            let datekey = month.toDateKey();
+            let results, now;
+
+            (url.includes("https://") ? https : http).get(url, res => {
+
+                let body = '';
+
+                res.on('data', chunk => body += chunk);
+                res.on('end', () => {
+                    try {
+                        // attempt to parse the wod from the http response
+                        results = parse(body, datekey);
+                        now     = new Date();
+
+                        // looping through the results to save them.
+                        utils.foreach(results, day => {
+
+                            // saving the time we retrieved the day
+                            day.retrieved = now;
+
+                            // saving day to storage.
+                            storage[day.date] = day;   
+                        });
+
+                        resolve();
+                    }
+                    catch (e) {
+                        reject(e, {
+                            message: "Error parsing calendar from Zenplanner html response",
+                            month:   month,
+                            url:     url
+                        });
+                    }
+                });
+
+            }).on('error', e => {
+                reject(e, {
+                    message: "Error in http request for calendar to Zenplanner",
+                    month:   month,
+                    url:     url
+                });
+            });
+        });
     }
 };
 
@@ -47,9 +131,11 @@ let calendarService = module.exports = {
 
         log('initializing calendarService...');
 
-        if (!check(config)           .isObject().notNull ().isValid) { throw format("calendarService was initialized without any configuration"); }
-        if (!check(config.url)       .isString().notEmpty().isValid) { throw format(`"config.url" must be a valid url`); }
-        if (!check(config.expiration).isInt   ()           .isValid) { throw format(`"config.expiration" must be a valid url`); }
+        if (!check(config)             .isObject().notNull ().isValid) { throw format("calendarService was initialized without any configuration"); }
+        if (!check(config.url)         .isString().notEmpty().isValid) { throw format(`"config.url" must be a valid url`); }
+        if (!check(config.expiration)  .isInt   ()           .isValid) { throw format(`"config.expiration" must be a positive integer`); }
+        if (!check(config.starttimekey).isString().notEmpty().isValid) { throw format(`"config.starttimekey" must be a valid timekey in the format hhmm`); }
+        if (!check(config.endtimekey)  .isString().notEmpty().isValid) { throw format(`"config.endtimekey" must be a valid timekey in the format hhmm`); }
 
         settings = config;
 
@@ -57,82 +143,18 @@ let calendarService = module.exports = {
     },
 
     getRange: function (start, end) {
-        return new Promise((resolve, reject) => {
-            let temp  = start.clone(),
-                month = [],
-                datekey, dayData, invalid;
+        return new Promise(async function (resolve, reject) {
+            let results = helper.getResults(start, end);
+            
+            if (!results) {
+                await helper.requestMonth(start);
 
-            do {
-                datekey = temp.toDateKey();
-                dayData = storage[datekey];
+                if (start.getMonth() != end.getMonth()) { await helper.requestMonth(end); }
 
-                if (helper.isExpired(dayData)) {
-                    invalid = true;
-                    break;
-                }
-                else { month.push(dayData); }
+                results = helper.getResults(start, end)
+            }
 
-                temp.addDays(1);
-
-            } while (temp < end);
-
-            if (!invalid) { return resolve(month); }
-
-            // if we don't have a wod stored. we need to grab it from ninjafit's 
-            // portal website. format the url of the portal website to retrieve
-            // the wod.
-            let url = helper.getUrl(start);
-
-            (url.includes("https://") ? https : http).get(url, res => {
-
-                let body = '';
-
-                res.on('data', chunk => body += chunk);
-                res.on('end', () => {
-                    try {
-                        // attempt to parse the wod from the http response
-                        month = parse(body, datekey);
-                        start = start.toDateKey();
-                        end   = end  .toDateKey();
-                        temp  = new Date();
-
-                        // returning the month calendar.
-                        resolve(utils.map(month, day => { 
-
-                            // saving the time we retrieved the day
-                            day.retrieved = temp;
-
-                            // saving day to storage.
-                            storage[day.datekey] = day;   
-
-                            // if we're within the start & end dates, return 
-                            // the day otherwise it gets filtered out.
-                            if (day.datekey >= start && day.datekey <= end) { 
-                                return {
-                                    datekey: day.datekey,
-                                    items:   day.items
-                                }
-                            }
-                        }));
-                    }
-                    catch (e) {
-                        reject(e, {
-                            message: "Error parsing calendar from Zenplanner html response",
-                            start:   start,
-                            end:     end,
-                            url:     url
-                        });
-                    }
-                });
-
-            }).on('error', e => {
-                reject(e, {
-                    message: "Error in http request for calendar to Zenplanner",
-                    start:   start,
-                    end:     end,
-                    url:     url
-                });
-            });
+            resolve(results);
         });
     },
 

@@ -8,20 +8,20 @@ let express         = require('express'),
 router.use(cors());
 router.use(logging);
 
-router.get('/calendar/month', (req, res) => {
-    calendarService.getMonth(req.query.datekey)
+router.get('/calendar/month', async (req, res) => {
+    await calendarService.getMonth(req.query.datekey)
         .then ((data)     => res.status(status.success.ok).json(data))
         .catch((e, props) => res.error(e, props));
 });
 
-router.get('/calendar/week', (req, res) => {
-    calendarService.getWeek(req.query.datekey)
+router.get('/calendar/week', async (req, res) => {
+    await calendarService.getWeek(req.query.datekey)
         .then ((data)     => res.status(status.success.ok).json(data))
         .catch((e, props) => res.error(e, props));
 });
 
-router.get('/calendar/day', (req, res) => {
-    calendarService.getDay(req.query.datekey)
+router.get('/calendar/day', async (req, res) => {
+    await calendarService.getDay(req.query.datekey)
         .then ((data)     => res.status(status.success.ok).json(data))
         .catch((e, props) => res.error(e, props));
 });

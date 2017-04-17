@@ -3,6 +3,8 @@ Date.startOfWeek = function () { return new Date().toStartOfWeek(); };
 Date.endOfWeek   = function () { return new Date().toEndOfWeek  (); };
 
 Date.fromDateKey = function (datekey) {
+    if (!datekey) { return new Date(); }
+
     datekey = datekey.toString();
 
     let year  = datekey.substr(0, 4);
@@ -10,6 +12,18 @@ Date.fromDateKey = function (datekey) {
     let day   = datekey.substr(6, 2);
 
     return new Date(`${month}-${day}-${year}`);
+};
+
+Date.prototype.getDayOfWeekText = function () {
+    switch (this.getDay()) {
+        case  0: return 'Sunday';
+        case  1: return 'Monday';
+        case  2: return 'Tuesday';
+        case  3: return 'Wednesday';
+        case  4: return 'Thursday';
+        case  5: return 'Friday';
+        case  6: return 'Saturday';
+    }
 };
 
 Date.prototype.toDateKey = function () {

@@ -18,8 +18,8 @@ let helper = {
         els  = el.find('.clickable');
         text = el.find('.dayLabel').text().trim();
         day  = { 
-            datekey: helper.adjustDateKey(datekey, text),
-            items:   []
+            date:  helper.adjustDateKey(datekey, text),
+            items: []
         };
 
         for (i = 0; i < els.length; i++) {
@@ -33,7 +33,7 @@ let helper = {
     parseItem: function (el, datekey) {
         let item, attr, text, start, end;
 
-        item = { datekey: datekey };
+        item = {};
         attr = el.attr('onclick');
 
         if (attr.includes('enrollment.cfm')) {
@@ -56,9 +56,12 @@ let helper = {
         }
 
         text  = el.text().trim().substr(0, 4);
-        start = parseInt(text) - 1;
+        start = parseInt(text);
 
-        if (text.toLowerCase().includes('pm')) { start += 12; }
+        if (text.toLowerCase().includes('pm')) { 
+            if (start < 12) start += 12; 
+        }
+        else if (start == 12) { start = 0; }
 
         end = start + 1;
 

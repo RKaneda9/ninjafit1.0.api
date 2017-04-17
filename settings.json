@@ -1,7 +1,9 @@
 {
     "calendar": {
         "url": "https://ninjafitgyms.sites.zenplanner.com/calendar.cfm?date={date}&view=MONTH",
-        "expiration": 5
+        "expiration": 5,
+        "starttimekey": "0600",
+        "endtimekey": "2100"
     },
     "wod": {
         "url": "https://ninjafitgyms.sites.zenplanner.com/leaderboard-day.cfm?date={date}",
