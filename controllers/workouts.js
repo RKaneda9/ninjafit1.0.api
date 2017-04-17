@@ -9,9 +9,12 @@ router.use(cors());
 router.use(logging);
 
 router.get('/wod', (req, res) => {
-    wodService.get(req.query.datekey)
-        .then ((data)     => res.status(status.success.ok).json(data))
-        .catch((e, props) => res.error(e, props));
+    try {
+        wodService.get(req.query.datekey)
+            .then ((data)     => res.status(status.success.ok).json(data))
+            .catch((e, props) => res.error(e, props));
+    }
+    catch (e) { res.error(e); }
 });
 
 module.exports = router;
