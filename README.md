@@ -1,4 +1,5 @@
 # ninjafit1.0.api
+The backend api for NinjaFit Gym
 
 ## settings.json
 this file must be included in root to setup mailer, facebook and instagram. It should have the following setup:
