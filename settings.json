@@ -1,12 +1,9 @@
 {
-    "calendar": {
-        "url": "https://ninjafitgyms.sites.zenplanner.com/calendar.cfm?date={date}&view=MONTH",
-        "expiration": 5,
-        "starttimekey": "0600",
-        "endtimekey": "2100"
+    "facebook": {
+        "pageId":      "1702849776595679",
+        "accessToken": "EAAHD6YVBelcBAKRihtoUbBi1O8tHxK1x1xtiuGvdotctNA4CRygUby3ANmlzuMZARwzEW45uZAuiZCeBenSPnIWIQZC2XCGwcYDANnymxBQZBZB1cPeLfCCJhBiu3J5Y93blEe4xArcYiDC1g82TSDKwRP8uqjpUBkZCZAJwyCRr4QZDZD"
     },
-    "wod": {
-        "url": "https://ninjafitgyms.sites.zenplanner.com/leaderboard-day.cfm?date={date}",
-        "expiration": 5
+    "instagram": {
+        "pageId": "ninjafitgym"
     }
 }

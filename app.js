@@ -9,7 +9,9 @@ let express   = require('express'),
 app.use(parser.json());
 app.use(express.static(__dirname + '/public'));
 
+app.use('/contact',  require('./controllers/contact'));
 app.use('/schedule', require('./controllers/schedule'));
+app.use('/social',   require('./controllers/social'));
 app.use('/workouts', require('./controllers/workouts'));
 app.use(             require('./controllers/index'));
 

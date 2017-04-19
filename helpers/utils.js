@@ -1,4 +1,4 @@
-module.exports = {
+let utils = module.exports = {
     rand: length => Math.random().toString(36).substring(2, length || 25),
 
     foreach: (array, callback) => {
@@ -16,7 +16,7 @@ module.exports = {
 
     first: (array, func, defVal) => {
 
-        if (!(array instanceof Array)) { return defVal; }
+        if (!array || !(array instanceof Array)) { return defVal; }
 
         var keys = Object.keys(array);
 
@@ -31,7 +31,7 @@ module.exports = {
 
     map: (array, func) => {
 
-        if (typeof array != 'object') { return []; }
+        if (!array || typeof array != 'object') { return []; }
 
         var mapped, keys, val;
 
@@ -50,7 +50,7 @@ module.exports = {
 
         var mapped = {};
 
-        if (!(obj instanceof Object)) { return mapped; }
+        if (!obj || !(obj instanceof Object)) { return mapped; }
 
         var keys = Object.keys(obj);
 
@@ -61,5 +61,32 @@ module.exports = {
         }
 
         return mapped;
+    },
+
+    extend: (obj, props, override) => {
+        if (!props) { return; }
+
+        let keys = Object.keys(props),
+            i, val;
+
+        for (i = 0; i < keys.length; i++) {
+            val = props[keys[i]];
+
+            if (!override && obj[keys[i]]) { continue; }
+
+            switch (typeof val) {
+                case 'string':
+                case 'number':
+                case 'boolean':
+                    obj[keys[i]] = val;
+                    break;
+                case 'object':
+                case 'array':
+                    obj[keys[i]] = new val.constructor;
+                    utils.extend(obj[keys[i]], val);
+                    break;
+
+            }
+        }
     }
 };

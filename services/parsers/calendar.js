@@ -3,16 +3,16 @@ let cheerio = require('cheerio'),
 
 let helper = {
 
-    toTimeKey: function (hour) {
+    toTimeKey (hour) {
         return `${hour < 10 ? '0' : ''}${hour}00`;
     },
 
-    adjustDateKey: function (datekey, day) {
+    adjustDateKey (datekey, day) {
         while (day.length < 2) { day = '0' + day; }
         return `${datekey.toString().slice(0,6)}${day}`;
     },
 
-    parseDay: function (el, datekey) {
+    parseDay (el, datekey) {
         let els, text, item, day, i;
 
         els  = el.find('.clickable');
@@ -30,7 +30,7 @@ let helper = {
         return day;
     },
 
-    parseItem: function (el, datekey) {
+    parseItem (el, datekey) {
         let item, attr, text, start, end;
 
         item = {};

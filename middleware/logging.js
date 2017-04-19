@@ -72,7 +72,7 @@ module.exports = (req, res, next) => {
 
         res
             .status(status.serverError.internal)
-            .send  (props.message);
+            .send  (props ? props.message : e.message);
     };
 
     next();
