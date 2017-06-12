@@ -43,18 +43,18 @@ class MailerService {
 
             try {
 
-                let invalid = msg => resolve({ isValid: false, message: msg }),
-                    valid   = msg => resolve({ isValid: true,  message: msg });
+                let invalid = (field, msg) => resolve({ isValid: false, message: msg, target: field }),
+                    valid   =         msg  => resolve({ isValid: true,  message: msg });
 
-                if (!check(message)          .isObject().notNull ()             .isValid) { return invalid("There was a problem sending your message!"); }
-                if (!check(message.firstName).isString().notEmpty()             .isValid) { return invalid("Please enter a first name."); }
-                if (!check(message.firstName).len(this.settings.firstNameLength).isValid) { return invalid(`First name must be at least ${this.settings.firstNameLength} characters.`); }
-                if (!check(message.lastName) .isString().notEmpty()             .isValid) { return invalid("Please enter a last name."); }
-                if (!check(message.lastName) .len(this.settings.lastNameLength) .isValid) { return invalid(`Last name must be at least ${this.settings.firstNameLength} characters.`); }
-                if (!check(message.email)    .isString().notEmpty()             .isValid) { return invalid("Please enter an email address."); }
-                if (!check(message.email)    .isEmail ()                        .isValid) { return invalid(`Please enter a valid email address.`); }
-                if (!check(message.content)  .isString().notEmpty()             .isValid) { return invalid("Please enter message content."); }
-                if (!check(message.content)  .len(this.settings.contentLength)  .isValid) { return invalid(`Message content must be at least ${this.settings.firstNameLength} characters.`); }
+                if (!check(message)          .isObject().notNull ()             .isValid) { return invalid("firstName", "There was a problem sending your message!"); }
+                if (!check(message.firstName).isString().notEmpty()             .isValid) { return invalid("firstName", "Please enter a first name."); }
+                if (!check(message.firstName).len(this.settings.firstNameLength).isValid) { return invalid("firstName", `First name must be at least ${this.settings.firstNameLength} characters.`); }
+                if (!check(message.lastName) .isString().notEmpty()             .isValid) { return invalid("lastName", "Please enter a last name."); }
+                if (!check(message.lastName) .len(this.settings.lastNameLength) .isValid) { return invalid("lastName", `Last name must be at least ${this.settings.firstNameLength} characters.`); }
+                if (!check(message.email)    .isString().notEmpty()             .isValid) { return invalid("email",    "Please enter an email address."); }
+                if (!check(message.email)    .isEmail ()                        .isValid) { return invalid("email",   `Please enter a valid email address.`); }
+                if (!check(message.content)  .isString().notEmpty()             .isValid) { return invalid("content", "Please enter message content."); }
+                if (!check(message.content)  .len(this.settings.contentLength)  .isValid) { return invalid("content", `Message content must be at least ${this.settings.firstNameLength} characters.`); }
                 
                 let content = this.settings.messageContent
                     .split('{firstname}').join(message.firstName)

@@ -9,7 +9,7 @@ let helper = {
 
     adjustDateKey (datekey, day) {
         while (day.length < 2) { day = '0' + day; }
-        return `${datekey.toString().slice(0,6)}${day}`;
+        return parseInt(`${datekey.toString().slice(0,6)}${day}`);
     },
 
     parseDay (el, datekey) {

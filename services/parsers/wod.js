@@ -11,8 +11,6 @@ module.exports = (html, datekey) => {
     els  = parent.children('div');
     text = parent.prev('h2').text();
 
-    if (text.trim()) { wod.datekey = text; }
-
     ensure = force => {
         if (!workout || force) {
             workout = { contents: [] };
@@ -81,7 +79,11 @@ module.exports = (html, datekey) => {
 
                 // append the contents. remove any empty entries.
                 workout.contents = workout.contents.concat(
-                    text.split('<br>')
+                    text.split('&quot;')
+                        .join ('"')
+                        .split('&apos;')
+                        .join ("'")
+                        .split('<br>')
                         .map   (text => text.trim())
                         .filter(text => text.length)
                 );
