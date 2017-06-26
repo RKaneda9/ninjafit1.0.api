@@ -8,8 +8,7 @@ class MailerService {
     constructor(props) {
         this.storage  = {};
         this.settings = {
-            smtpHost: "smtp.gmail.com",
-            smtpPort: 465,
+            service: "gmail",
             messageSubject: "NinjaFit Site Message from {firstname} {lastname}",
             messageContent: "New Message sent to NinjaFit Site\n\nFirst Name: {firstname}\n\nLast Name: {lastname}\n\nEmail: {email}\n\nMessage Content:\n{content}"
 
@@ -27,10 +26,7 @@ class MailerService {
     setupMailer() {
         this.mailer = mailer.createTransport({
 
-            host:             this.settings.smtpHost,
-            port:             this.settings.smtpPort,
-            secureConnection: true,
-            transportMethod:  'SMTP',
+            service: this.settings.service,
             auth: {
                 user: this.settings.fromAddress,
                 pass: this.settings.fromPassword

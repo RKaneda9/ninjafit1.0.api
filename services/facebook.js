@@ -28,7 +28,7 @@ class FacebookService {
     getProfilePictureUrl () { return `${this.getApiUrl()}picture`; }
 
     getPictureUrl (id) { return id ? `${this.settings.apiUrl.split('{id}').join(id)}picture` : undefined; }
-    getPostUrl    (id) { return `${this.settings.pageUrl}posts/${id}`; }
+    getPostUrl    (id) { return `${this.getProfileUrl()}posts/${id}`; }
 
     getHashtags (str) {
         if (!check(str).isString().notEmpty().isValid) { return []; }
@@ -87,7 +87,7 @@ class FacebookService {
                         case 'link':
                             post.link = {
                                 type:        data.type,
-                                image:       this.getPictureUrl(data.object_id) || data.picture,
+                                image:       data.picture || this.getPictureUrl(data.object_id),
                                 href:        data.link,
                                 description: data.description,
                                 title:       data.name,
@@ -97,7 +97,7 @@ class FacebookService {
 
                         case 'photo':
                             post.image = {
-                                url:  this.getPictureUrl(data.object_id),
+                                url:  data.picture || this.getPictureUrl(data.object_id),
                                 href: data.link
                             };
                             break;
