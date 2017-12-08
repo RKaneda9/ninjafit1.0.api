@@ -18,7 +18,8 @@ module.exports = {
             unknown: undefined,
             private: 'private',
             kids:    'kids',
-            wod:     'wod'
+            wod:     'wod',
+            open:    'open'
         }
     }
 };

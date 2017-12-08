@@ -1,92 +1,195 @@
-let cheerio = require('cheerio'),
-    enums   = require('../../helpers/enums');
+const
+  cheerio = require('cheerio'),
+  moment  = require('moment'),
+  enums   = require('../../helpers/enums');
 
-let helper = {
-
-    toTimeKey (hour) {
-        return `${hour < 10 ? '0' : ''}${hour}00`;
-    },
-
-    adjustDateKey (datekey, day) {
-        while (day.length < 2) { day = '0' + day; }
-        return parseInt(`${datekey.toString().slice(0,6)}${day}`);
-    },
-
-    parseDay (el, datekey) {
-        let els, text, item, day, i;
-
-        els  = el.find('.clickable');
-        text = el.find('.dayLabel').text().trim();
-        day  = { 
-            date:  helper.adjustDateKey(datekey, text),
-            items: []
-        };
-
-        for (i = 0; i < els.length; i++) {
-            item = helper.parseItem(els.eq(i), datekey);
-            day.items.push(item);
-        }
-
-        return day;
-    },
-
-    parseItem (el, datekey) {
-        let item, attr, text, start, end;
-
-        item = {};
-        attr = el.attr('onclick');
-
-        if (attr.includes('enrollment.cfm')) {
-            item.type = enums.event.type.class;
-
-            attr = el.attr('class').toLowerCase();
-
-                 if (attr.includes('purple')) { item.subtype = enums.event.subtype.wod;     }
-            else if (attr.includes('green'))  { item.subtype = enums.event.subtype.private; }
-            else if (attr.includes('silver')) { item.subtype = enums.event.subtype.kids;    }
-            else                              { item.subtype = enums.event.subtype.unknown; }
-        }
-        else if (attr.includes('event.cfm')) {
-
-            item.type = enums.event.type.event;
-        }
-        else {
-
-            item.type = enums.event.type.unknown;
-        }
-
-        text  = el.text().trim().substr(0, 4);
-        start = parseInt(text);
-
-        if (text.toLowerCase().includes('pm')) { 
-            if (start < 12) start += 12; 
-        }
-        else if (start == 12) { start = 0; }
-
-        end = start + 1;
-
-        if (end > 23) { end = 0; }
-
-        // to timekey
-        item.start    = helper.toTimeKey(start);
-        item.end      = helper.toTimeKey(end);
-        item.duration = '0100'; // right now everything is 1 hour.
-        item.title    = el.text().trim().substr(4).trim();
-        
-        return item;
-    }
+class CalendarDay {
+  constructor(dateKey, items) {
+    this.date      = dateKey;
+    this.items     = items || [];
+    this.retrieved = new Date();
+  }
 }
 
-module.exports = (html, datekey) => {
-    let $    = cheerio.load(html),
-        els  = $('.thisMonth'),
-        days = [],
-        i;
+class CalendarItem {
+  constructor(props) {
+    if (!props) props = {};
 
-    for (i = 0; i < els.length; i++) {
-        day = helper.parseDay(els.eq(i), datekey);
-        days.push(day);
+    this.id      = adjust(props.id);
+    this.type    = props.type;
+    this.subtype = props.subtype;
+    this.title   = adjust(props.title);
+    this.desc    = adjust(props.desc);
+    this.start   = props.start;
+    this.end     = props.end;
+
+    if (!this.type && !this.subtype) this.parseTypes(props.color);
+  }
+
+  setDetails(props) {
+    if (!props) props = {};
+
+    ['title', 'desc', 'start', 'end', 'duration'].forEach(key => {
+      if (!this[key] && props[key]) {
+        this[key] = adjust(props[key]);
+      }
+    });
+  }
+
+  parseTypes(color, title) {
+    return this.parseTypesFromColor(color) || this.parseTypesFromTitle(title);
+  }
+
+  parseTypesFromColor(color) {
+    color = color && color.trim().toLowerCase();
+
+    switch (color) {
+      case 'purple':
+        this.type    = enums.event.type.class;
+        this.subtype = enums.event.subtype.wod;
+        return true;
+
+      case 'green':
+        this.type    = enums.event.type.class;
+        this.subtype = enums.event.subtype.private;
+        return true;
+
+      case 'silver':
+        this.type    = enums.event.type.class;
+        this.subtype = enums.event.subtype.kids;
+        return true;
+
+      case 'red':
+        this.type    = enums.event.type.class;
+        this.subtype = enums.event.subtype.open;
+        return true;
+
+      case 'black':
+        this.type    = enums.event.type.class;
+        this.subtype = enums.event.subtype.unknown;
+        return true;
     }
 
-    return days;
+    return false;
+  }
+
+  parseTypesFromTitle(title) {
+    title = (title || this.title).toLowerCase();
+
+    if (title.includes('wod')) {
+      this.type    = enums.event.type.class;
+      this.subtype = enums.event.subtype.wod;
+      return true;
+    }
+
+    if (title.includes('open gym')) {
+      this.type    = enums.event.type.class;
+      this.subtype = enums.event.subtype.open;
+      return true;
+    }
+
+    if (title.includes('private')) {
+      this.type    = enums.event.type.class;
+      this.subtype = enums.event.subtype.private;
+      return true;
+    }
+
+    if (title.includes('kids')) {
+      this.type    = enums.event.type.class;
+      this.subtype = enums.event.subtype.kids;
+      return true;
+    }
+
+    return false;
+  }
+}
+
+function adjust(str) {
+  if (typeof str !== 'string') return str;
+
+  return str.split('\n').join('').trim();
+}
+
+function parseWeek(html, datekey) {
+  const $      = cheerio.load(html);
+  const format = 'YYYY-MM-DD';
+  const dayEls = $('.container[date]');
+  const days   = [];
+  const dates  = Array.apply(null, Array(7)).map((v, i) =>
+    moment(datekey, 'YYYYMMDD').clone().add(i, 'days')
+  );
+
+  for (const date of dates) {
+    const dayEl   = $(`.container[date=${date.format(format)}]`);
+    const itemEls = dayEl ? dayEl.find('.item') : [];
+    const dateKey = date.toDate().getDateKey();
+    const day     = new CalendarDay(dateKey);
+
+    for (let j = 0; j < itemEls.length; j++) {
+      const itemEl = itemEls.eq(j);
+      const item   = new CalendarItem({
+        id:    itemEl.attr('id'),
+        color: itemEl.attr('class').replace('item', '').replace('clickable', '').trim().toLowerCase(),
+        title: itemEl.text()
+      });
+
+      day.items.push(item);
+    }
+
+    days.push(day);
+  }
+
+  return days;
+}
+
+// html = html string of an event item detail page from zenplanner
+// item = calendar item
+function fillItemDetails(html, item) {
+  const $         = cheerio.load(html);
+  const title     = $('.spaceBelow .spaceBelow span:first-child[style]').text();
+  const desc      = $('.spaceBelow .spaceBelow .spaceBelow').text();
+  const timeRange = $('#idPage table tr:nth-child(2) td.bold:last-child').text().toLowerCase();
+
+  if (timeRange) {
+    const pieces = timeRange.split('-');
+
+    let start = parseInt(pieces[0]);
+    let end   = parseInt(pieces[1]);
+
+    if (isNaN(start)) start = 0;
+
+    if (pieces.length && pieces[0].includes('pm')) {
+      if (start < 12) start += 12;
+    }
+    else if (start === 12) start -= 12;
+
+    if (isNaN(end)) {
+      end = start + 1;
+    }
+    else if (pieces[1] && pieces[1].includes('pm')) {
+      if (end < 12) end += 12;
+    }
+    else if (end === 12) end -= 12;
+
+    const diff = (end - start) >= 0 ? (end - start) : (end + 24 - start);
+
+    item.setDetails({
+      start:    hourToTimeKey(start),
+      end:      hourToTimeKey(end),
+      duration: hourToTimeKey(diff)
+    });
+  }
+
+  item.setDetails({ title, desc });
+
+  return item;
+}
+
+function hourToTimeKey(hour) {
+  return `${hour < 10 ? '0' : ''}${hour}00`;
+}
+
+module.exports = {
+  parseWeek,
+  fillItemDetails
 };

@@ -17,6 +17,7 @@
         "cors": "^2.8.3",
         "express": "^4.15.2",
         "http": "0.0.0",
+        "moment": "^2.19.3",
         "nodemailer": "^2.7.2"
     },
     "scripts": {
