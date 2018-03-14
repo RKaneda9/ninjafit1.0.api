@@ -1,10 +1,11 @@
 const
-  moment  = require('moment'),
-  http    = require('../helpers/http'),
-  utils   = require('../helpers/utils'),
-  {check} = require('../helpers/validator'),
-  log     = require('../helpers/logger'),
-  parser  = require('./parsers/calendar');
+  moment   = require('moment'),
+  http     = require('../helpers/http'),
+  utils    = require('../helpers/utils'),
+  {check}  = require('../helpers/validator'),
+  log      = require('../helpers/logger'),
+  facebook = require('./facebook'),
+  parser   = require('./parsers/calendar');
 
 class CalendarService {
     constructor(props) {
@@ -88,14 +89,15 @@ class CalendarService {
       return date;
     }
 
-    async requestWeek(dateKey) {
+    async requestWeek(start, end) {
       try {
-        if (!dateKey) dateKey = new Date().getDateKey();
+        if (!start) start = new Date().getDateKey();
 
-        const date = moment(dateKey, 'YYYYMMDD').format('YYYY-MM-DD');
+        const date = moment(start, 'YYYYMMDD').format('YYYY-MM-DD');
         const url  = this.settings.requestWeekEndpoint.split('{date}').join(date);
         const body = await http.get(url);
-        const days = parser.parseWeek(body, dateKey);
+        const days = parser.parseWeek(body, start);
+        const events = await facebook.getEvents();
 
         for (const day of days) {
           for (const item of day.items) {
@@ -104,6 +106,18 @@ class CalendarService {
             const html     = await http.get(endpoint);
 
             parser.fillItemDetails(html, item);
+            item.link = endpoint;
+          }
+
+          const eventItems = events.find(eventDay => eventDay.date === day.date);
+
+          if (eventItems) {
+            day.items.push.apply(day.items, eventItems.items);
+            day.items.sort((a, b) =>
+              a.start === b.start
+              ? (b.end - a.end)
+              : (a.start - b.start)
+            );
           }
 
           // saving day to storage.

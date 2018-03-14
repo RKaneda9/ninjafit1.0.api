@@ -2,3 +2,4 @@ database/
 node_modules/
 logs/
 settings.json
+**/.DS_Store

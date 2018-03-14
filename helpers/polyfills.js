@@ -2,7 +2,7 @@ let utils = require('./utils');
 
 /*/////////////////////////////////////////////////////////////////////////////////
 //
-//  Region: Static Functions 
+//  Region: Static Functions
 //
 /////////////////////////////////////////////////////////////////////////////////*/
 
@@ -24,7 +24,7 @@ Date.fromDateKey = function (datekey) {
 
 /*/////////////////////////////////////////////////////////////////////////////////
 //
-//  Region: Get Property Functions 
+//  Region: Get Property Functions
 //
 /////////////////////////////////////////////////////////////////////////////////*/
 
@@ -171,17 +171,17 @@ Date.prototype.addHours = function (val) {
 
 /*/////////////////////////////////////////////////////////////////////////////////
 //
-//  Region: To Functions 
+//  Region: To Functions
 //
 /////////////////////////////////////////////////////////////////////////////////*/
 
 Date.prototype.toUtc = function () {
     return new Date(
-        this.getUTCFullYear(), 
-        this.getUTCMonth(), 
-        this.getUTCDate(),  
-        this.getUTCHours(), 
-        this.getUTCMinutes(), 
+        this.getUTCFullYear(),
+        this.getUTCMonth(),
+        this.getUTCDate(),
+        this.getUTCHours(),
+        this.getUTCMinutes(),
         this.getUTCSeconds()
     );
 };
@@ -220,7 +220,7 @@ Date.prototype.toEndOfMonth = function () {
 Date.prototype.isToday = function () {
     let now = new Date();
 
-    return 
+    return
         this.getUTCFullYear() == now.getUTCFullYear() &&
         this.getUTCMonth()    == now.getUTCMonth()    &&
         this.getUTCDate()     == now.getUTCDate()
@@ -232,12 +232,12 @@ Date.prototype.isYesterday = function () {
 
 /*/////////////////////////////////////////////////////////////////////////////////
 //
-//  Region: Other Functions 
+//  Region: Other Functions
 //
 /////////////////////////////////////////////////////////////////////////////////*/
 
 Date.prototype.clone = function () {
-    return new Date(this); 
+    return new Date(this);
 };
 
 Date.prototype.format = function (_format) {
@@ -292,7 +292,7 @@ Date.prototype.format = function (_format) {
         if (format.includes('mm')) { format = replacePieces(pieces, format, 'mm', pad(this.getMinutes())); }
         if (format.includes('m' )) { format = replacePieces(pieces, format, 'm' ,     this.getMinutes());  }
     }
-    
+
     // second
     if (format.includes('s')) {
         if (format.includes('ss')) { format = replacePieces(pieces, format, 'ss', pad(this.getSeconds())); }
@@ -315,15 +315,15 @@ Date.prototype.format = function (_format) {
 };
 
 function replacePieces (pieces, format, find, replace) {
-    
+
     for (var i = 0; i < pieces.length; i++) {
-        
+
         if (pieces[i].original && pieces[i].text.includes(find)) {
-            
+
             var piece    = pieces[i];
             var subTexts = piece.text.split(find);
             var params   = [i, 1];
-            
+
             for (var j = 0; j < subTexts.length; j++) {
 
                 // if the text is empty, don't add an empty text back
@@ -331,19 +331,19 @@ function replacePieces (pieces, format, find, replace) {
                 params.push({ original: true,  text: subTexts[j] });
 
                 // don't add the replacement text if we're on the last sub text
-                if (j < subTexts.length - 1) 
-                params.push({ original: false, text: replace     }); 
+                if (j < subTexts.length - 1)
+                params.push({ original: false, text: replace     });
             }
-            
+
             pieces.splice.apply(pieces, params);
 
             i += params.length - 2;
         }
     }
-    
-    return map(pieces, piece => piece.original ? piece.text : undefined).join(''); 
+
+    return map(pieces, piece => piece.original ? piece.text : undefined).join('');
 }
 
-function pad (val, length) { 
+function pad (val, length) {
     return ("00000" + val).slice(-1 * (length || 2));
 }

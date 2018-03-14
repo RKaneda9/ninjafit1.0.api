@@ -55,7 +55,7 @@ module.exports = (html, datekey) => {
                 // if there is no text, skip this element.
                 if (!text) { continue; }
 
-                // ensure the workout object exists, or create a new one 
+                // ensure the workout object exists, or create a new one
                 // if it doesn't.
                 ensure();
 
@@ -90,6 +90,6 @@ module.exports = (html, datekey) => {
                 break;
         }
     }
-    
+
     return wod;
 };

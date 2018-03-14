@@ -1,6 +1,7 @@
-let http    = require('../helpers/http'),
-    utils   = require('../helpers/utils'),
-    {check} = require('../helpers/validator');
+const http    = require('../helpers/http');
+const utils   = require('../helpers/utils');
+const {check} = require('../helpers/validator');
+const enums   = require('../helpers/enums');
 
 class FacebookService {
     constructor (props) {
@@ -21,7 +22,8 @@ class FacebookService {
     }
 
     getApiUrl     () { return this.settings.apiUrl .split('{id}').join(this.settings.pageId); }
-    getProfileUrl () { return this.settings.pageUrl.split('{id}').join(this.settings.pageId);; }
+    getProfileUrl () { return this.settings.pageUrl.split('{id}').join(this.settings.pageId); }
+    getEventsUrl  () { return `${this.getApiUrl()}events?access_token=${this.settings.accessToken}`; }
     getFeedUrl    () { return `${this.getApiUrl()}posts?access_token=${this.settings.accessToken}&limit=${this.settings.postLimit}&fields=${this.settings.fieldsExt}`; }
     getHashtagUrl () { return this.settings.hashtagUrl; }
 
@@ -40,6 +42,67 @@ class FacebookService {
         return this.storage.retrieved && new Date() - this.storage.retrieved < 60000 * this.settings.expiration
              ? this.storage.data
              : null;
+    }
+
+    getEvents () {
+        return new Promise(async (resolve, reject) => {
+            try {
+              const url = this.getEventsUrl();
+
+              const response = await http.get(url);
+              const events   = JSON.parse(response).data;
+              const days     = [];
+
+              for (const event of events) {
+                const start = new Date(event.start_time);
+                const end = new Date(event.end_time);
+                const dh = end.getHours() - start.getHours();
+                const dm = end.getMinutes() - start.getMinutes();
+                const dateKey = start.getDateKey();
+
+                const duration =
+                    (dh < 10 ? '0' : '') + dh.toString()
+                  + (dm < 10 ? '0' : '') + dm.toString();
+
+                const item = {
+                  desc: event.description,
+                  duration: duration,
+                  title: event.name,
+                  id: event.id,
+                  link: `https://www.facebook.com/events/${event.id}`,
+                  subtype: enums.event.subtype.unknown,
+                  type: enums.event.type.event,
+                  start: start.getTimeKey(),
+                  end: end.getTimeKey()
+                };
+
+                let day = days.find(d => d.date == dateKey);
+
+                if (!day) {
+                  day = {
+                    date: dateKey,
+                    items: []
+                  };
+
+                  days.push(day);
+                }
+
+                day.items.push(item);
+              }
+
+              for (const day of days) {
+                day.items.sort((a, b) =>
+                  a.start === b.start
+                  ? (b.end - a.end)
+                  : (a.start - b.start)
+                );
+              }
+
+              days.sort((a, b) => a.date - b.date);
+
+              return resolve(days);
+            } catch (e) { reject(e); }
+        });
     }
 
     getFeed () {
@@ -65,7 +128,7 @@ class FacebookService {
 
                     if (!check(data).isObject().notEmpty().isValid) { return; }
 
-                    if (!res.page.name && data.from) { 
+                    if (!res.page.name && data.from) {
                         res.page.name = data.from.name;
                     }
 
@@ -82,7 +145,7 @@ class FacebookService {
                     };
 
                     switch (data.type) {
-                        case 'video': 
+                        case 'video':
                         case 'event':
                         case 'link':
                             post.link = {
@@ -102,9 +165,9 @@ class FacebookService {
                             };
                             break;
 
-                        default: break; 
+                        default: break;
                     }
-                    return post; 
+                    return post;
                 });
 
                 this.save(res);
@@ -119,10 +182,11 @@ class FacebookService {
         this.storage.retrieved = new Date();
     }
 }
-                    
+
 const service = new FacebookService((require('../settings.json') || {}).facebook);
 Object.freeze(service);
 
-module.exports = { 
+module.exports = {
+    getEvents: service.getEvents.bind(service),
     getFeed: service.getFeed.bind(service)
 };

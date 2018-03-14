@@ -21,10 +21,10 @@ class InstagramService {
 
     getFeedUrl () { return this.settings.pageUrl.split('{id}').join(this.settings.pageId); }
 
-    getMediaUrl (code, username) { 
+    getMediaUrl (code, username) {
         return this.settings.mediaLinkUrl
             .split('{mediaCode}').join(code)
-            .split('{userName}') .join(username); 
+            .split('{userName}') .join(username);
     }
 
     getFeedFromStorage () {
@@ -41,7 +41,7 @@ class InstagramService {
                 if (res) { return resolve(res); }
 
                 let response = await http.get(this.getFeedUrl());
-                let data     = parse(response).entry_data.ProfilePage[0].user;
+                let data     = parse(response).entry_data.ProfilePage[0].graphql.user;
 
                 res = {};
 
@@ -50,28 +50,27 @@ class InstagramService {
                     pageName:   data.full_name,
                     userName:   data.username,
                     bio:        data.biography,
-                    followedBy: data.followed_by ? data.followed_by.count : 0,
-                    following:  data.follows     ? data.follows    .count : 0,
-                    postCount:  data.media.count,
+                    followedBy: data.edge_followed_by ? data.edge_followed_by.count : 0,
+                    following:  data.edge_follow      ? data.edge_follow     .count : 0,
+                    postCount:  data.edge_owner_to_timeline_media.count,
                     profilePic: data.profile_pic_url
                 };
 
-                res.media = utils.map(data.media.nodes, props => {
-
-                    let uploaded = new Date(props.date * 1000).toUtc();
+                res.media = utils.map(data.edge_owner_to_timeline_media.edges, post => {
+                    const props = post.node;
 
                     try {
                         return {
                             mediaId:         props.id,
-                            caption:         props.caption,
+                            caption:         props.edge_media_to_caption && props.edge_media_to_caption.edges.length ? props.edge_media_to_caption.edges[0].node.text : null,
                             thumbnailUrl:    props.thumbnail_src,
-                            displayUrl:      props.display_src,
-                            linkUrl:         this.getMediaUrl(props.code, res.meta.userName),
+                            displayUrl:      props.display_url,
+                            linkUrl:         this.getMediaUrl(props.shortcode, res.meta.userName),
                             isVideo:         props.is_video,
-                            videoViews:      props.video_views,
-                            commentCount:    props.comments ? props.comments.count : 0,
-                            likeCount:       props.likes    ? props.likes   .count : 0,
-                            uploadedTimeKey: new Date(props.date * 1000).toUtc().getDateTimeKey(),
+                            videoViews:      props.video_view_count,
+                            commentCount:    props.edge_media_to_comment ? props.edge_media_to_comment.count : 0,
+                            likeCount:       props.edge_liked_by         ? props.edge_liked_by        .count : 0,
+                            uploadedTimeKey: new Date(props.taken_at_timestamp * 1000).toUtc().getDateTimeKey(),
                         }
                     }
                     catch (e) { log.error(e); }
@@ -94,6 +93,6 @@ class InstagramService {
 const service = new InstagramService((require('../settings.json') || {}).instagram);
 Object.freeze(service);
 
-module.exports = { 
+module.exports = {
     getFeed: service.getFeed.bind(service)
 };
