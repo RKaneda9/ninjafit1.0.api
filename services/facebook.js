@@ -56,7 +56,7 @@ class FacebookService {
 
               for (const event of events) {
                 const start = moment.tz(event.start_time, tz);
-                const end = moment.tz(event.start_time, tz);
+                const end = moment.tz(event.end_time, tz);
                 const dh = end.hours() - start.hours();
                 const dm = end.minutes() - start.minutes();
                 const dateKey = start.toDate().getDateKey();
