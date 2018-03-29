@@ -2,6 +2,7 @@ const http    = require('../helpers/http');
 const utils   = require('../helpers/utils');
 const {check} = require('../helpers/validator');
 const enums   = require('../helpers/enums');
+const moment  = require('moment-timezone');
 
 class FacebookService {
     constructor (props) {
@@ -48,17 +49,17 @@ class FacebookService {
         return new Promise(async (resolve, reject) => {
             try {
               const url = this.getEventsUrl();
-
+              const tz = 'US/Eastern';
               const response = await http.get(url);
               const events   = JSON.parse(response).data;
               const days     = [];
 
               for (const event of events) {
-                const start = new Date(event.start_time);
-                const end = new Date(event.end_time);
-                const dh = end.getHours() - start.getHours();
-                const dm = end.getMinutes() - start.getMinutes();
-                const dateKey = start.getDateKey();
+                const start = moment.tz(event.start_time, tz);
+                const end = moment.tz(event.start_time, tz);
+                const dh = end.hours() - start.hours();
+                const dm = end.minutes() - start.minutes();
+                const dateKey = start.toDate().getDateKey();
 
                 const duration =
                     (dh < 10 ? '0' : '') + dh.toString()
@@ -72,8 +73,8 @@ class FacebookService {
                   link: `https://www.facebook.com/events/${event.id}`,
                   subtype: enums.event.subtype.unknown,
                   type: enums.event.type.event,
-                  start: start.getTimeKey(),
-                  end: end.getTimeKey()
+                  start: start.format('HHmm'),
+                  end: end.format('HHmm')
                 };
 
                 let day = days.find(d => d.date == dateKey);
