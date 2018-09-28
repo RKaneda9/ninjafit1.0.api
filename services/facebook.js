@@ -54,6 +54,8 @@ class FacebookService {
               const events   = JSON.parse(response).data;
               const days     = [];
 
+              if (!events) return days;
+
               for (const event of events) {
                 const start = moment.tz(event.start_time, tz);
                 const end = moment.tz(event.end_time, tz);
@@ -102,7 +104,10 @@ class FacebookService {
               days.sort((a, b) => a.date - b.date);
 
               return resolve(days);
-            } catch (e) { reject(e); }
+            } catch (e) {
+              console.log('facebook::getEvents: ', e);
+              return resolve([]);
+            }
         });
     }
 
